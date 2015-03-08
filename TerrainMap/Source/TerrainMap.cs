@@ -97,6 +97,8 @@ public class TerrainMap : Game {
    Random random;
    bool showHeight = false;
    KeyboardState oldState;
+   Random r = new Random();
+ 
    
    /// <summary>
    /// Constructor
@@ -191,7 +193,8 @@ public class TerrainMap : Game {
             colorVec3 = new Vector3(height, height, height);
             heightMap[x, z] = new Color(colorVec3);  // a color where r = g = b = the hieght value
             }
-      // Second create the pyramid with a base of 300 by 300 and a diagonal of 424 centered at (156, 156). 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////      
+/*       // Second create the pyramid with a base of 300 by 300 and a diagonal of 424 centered at (156, 156). 
 		// Have the step size of 5 and the "brick" height of each step is 9.
       int centerX = 156;
       int centerZ = 156;
@@ -209,18 +212,97 @@ public class TerrainMap : Game {
          for (int x = s; x < pyramidSide - s; x++)
             for (int z = s; z < pyramidSide - s; z ++) 
                pyramidHeight[x, z] += brick;
-      // convert corresponding heightMap color to pyramidHeight equivalent color
+       // convert corresponding heightMap color to pyramidHeight equivalent color
       for (int x = 0; x < pyramidSide; x++)
          for (int z = 0; z < pyramidSide; z++) {
             height = pyramidHeight[x, z]/255.0f;  // convert to grayscale 0.0 to 255.0f
             heightMap[centerX - halfWidth + x, centerZ - halfWidth + z] = 
                new Color(new Vector3(height, height, height));  
-            }   
-      // convert heightMap[,] to textureMap1D[]
-      textureMap1D = new Color[textureWidth * textureHeight];
+            }*/
+ //////////
+       int[] centersX = {100,250,400};
+       int[] centersZ = {100,150,100};
+       int step = 3;
+       int radius = 25;
+       int X,Z;
+       int temp, tempX, tempZ;
+       int Xmin, Xmax, Zmin, Zmax;
+       int[,] tempHeight = new int[textureWidth, textureHeight];
+       int tempMax = 0 ;
+
+       for (int x = 0; x < textureWidth; x++)
+           for (int z = 0; z < textureHeight; z++)
+               tempHeight[x, z] = 0;
+
+               for (int p = 0; p < 1; p++)
+               {
+                   for (int c = 0; c < 3; c++)
+                   {
+                       X = centersX[c];
+                       Z = centersZ[c];
+
+                       for (int s = 0; s < 5000; s++)
+                       {
+                           if (X > radius) Xmin = X - radius;
+                           else Xmin = 0;
+
+                           if (X < textureWidth - radius) Xmax = X + radius;
+                           else Xmax = textureWidth;
+
+                           if (Z > radius) Zmin = Z - radius;
+                           else Zmin = 0;
+
+                           if (Z < textureHeight - radius) Zmax = Z + radius;
+                           else Zmax = textureHeight;
+
+                           for (int x = Xmin; x < Xmax; x++)
+                           {
+                               for (int z = Zmin; z < Zmax; z++)
+                               {
+                                   if ((Math.Sqrt(((X - x) * (X - x)) + ((Z - z) * (Z - z)))) < radius)
+                                   {
+                                       tempHeight[x, z] += 1;
+
+                                       if (tempHeight[x, z] > tempMax)
+                                           tempMax = tempHeight[x, z];
+                                   }
+                               }
+                           }
+
+                           tempX = (randomStep(3) - 1);
+                           tempZ = (randomStep(3) - 1);
+
+
+                           X += (step * tempX);
+                           Z += (step * tempZ);
+
+                           if ((X < 0) || (X > textureWidth) || (Z < 0) || (Z > textureHeight))
+                           {
+                               temp = randomStep(3);
+                               X = centersX[temp];
+                               Z = centersZ[temp];
+                           }
+                       }
+                   }
+               }
+
+               for (int x = 0; x < textureWidth; x++)
+                   for (int z = 0; z < textureHeight; z++)
+                   {
+                       heightMap[x, z].R += (byte)(((float)tempHeight[x, z] / tempMax) * 250);
+                       heightMap[x, z].G += (byte)(((float)tempHeight[x, z] / tempMax) * 250);
+                       heightMap[x, z].B += (byte)(((float)tempHeight[x, z] / tempMax) * 250);
+                   }
+               
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+           // convert heightMap[,] to textureMap1D[]
+           textureMap1D = new Color[textureWidth * textureHeight];
       int i = 0;
-      for (int x = 0; x < textureWidth; x++)
-         for (int z = 0; z < textureHeight; z++) {
+      
+      for (int z = 0; z < textureHeight; z++)
+          for (int x = 0; x < textureWidth; x++)
+          {
             textureMap1D[i] = heightMap[x, z];
             i++;
          }      
@@ -229,6 +311,13 @@ public class TerrainMap : Game {
       newTexture.SetData<Color>(textureMap1D);
       return newTexture;
       }
+
+    private int randomStep(int num)
+   {
+       int i = r.Next(0, num);
+       i = r.Next(0, num);
+       return i;
+   }
 
 	/// <summary>
 	/// Return random int -range ... range
@@ -328,13 +417,15 @@ public class TerrainMap : Game {
       int grassHeight = 5;
       Vector4 colorVec4 = new Vector4();
       colorMap = new Color[textureWidth, textureHeight];
-      for (int x = 0; x < textureWidth; x++)
-         for (int z = 0; z < textureHeight; z++) {
+      
+      for (int z = 0; z < textureHeight; z++)
+          for (int x = 0; x < textureWidth; x++)
+          {
             if (heightMap[x, z].R < grassHeight) // make random grass
                   switch (random.Next(3)) { 
-                     case 0 : colorVec4 = new Color(0, 100, 0, 255).ToVector4(); break;  // Color.DarkGreen
-                     case 1 : colorVec4 = Color.Green.ToVector4();     break;
-                     case 2 : colorVec4 = Color.OliveDrab.ToVector4(); break;
+                     case 0: colorVec4 = new Color(0, 0, 250, 255).ToVector4(); break;  // Color.DarkGreen
+                     case 1: colorVec4 = new Color(0, 0, 200, 255).ToVector4(); break;
+                     case 2: colorVec4 = new Color(0, 0, 150, 255).ToVector4(); break;
                      }
                // color the pyramid based on height
 					else colorVec4 =  heightToVector4(heightMap[x, z].R);                    
@@ -345,8 +436,9 @@ public class TerrainMap : Game {
       // convert colorMap[,] to textureMap1D[]
       textureMap1D = new Color[textureWidth * textureHeight];
       int i = 0;
-      for (int x = 0; x < textureWidth; x++)
-         for (int z = 0; z < textureHeight; z++) {
+         for (int z = 0; z < textureHeight; z++)
+             for (int x = 0; x < textureWidth; x++)
+             {
             textureMap1D[i] = colorMap[x, z];
             i++;
             }
