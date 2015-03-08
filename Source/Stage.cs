@@ -25,6 +25,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using AGMGSKv6;
 #if MONOGAMES //  true, build for MonoGames
    using Microsoft.Xna.Framework.Storage; 
 #endif
@@ -104,6 +105,11 @@ public class Stage : Game {
 	// Stage variables
 	private TimeSpan time;  // if you need to know the time see Property Time
 
+    private Treasure treasures;
+    protected bool lerpFlag = true;
+    protected int PCscore = 0;
+    protected int NPCscore = 0;
+    
 
    public Stage() : base() {
       graphics = new GraphicsDeviceManager(this);
@@ -256,11 +262,20 @@ public class Stage : Game {
       return terrain.surfaceHeight( (int) x/spacing, (int) z/spacing); }
 
    public void setSurfaceHeight(Object3D anObject3D) {
-      float terrainHeight = terrain.surfaceHeight( (int) (anObject3D.Translation.X / spacing), 
-                                                   (int) (anObject3D.Translation.Z / spacing) );
-      anObject3D.Translation = new Vector3( anObject3D.Translation.X, 
-                                            terrainHeight, anObject3D.Translation.Z);
-      }
+       float terrainHeight;
+
+       if (lerpFlag)
+       {
+           terrainHeight = terrain.surfaceHeightLerp((anObject3D.Translation.X), (anObject3D.Translation.Z));
+       }
+       else
+       {
+           terrainHeight = terrain.surfaceHeight((int)(anObject3D.Translation.X / spacing),
+                                                       (int)(anObject3D.Translation.Z / spacing));
+       }
+
+       anObject3D.Translation = new Vector3(anObject3D.Translation.X,terrainHeight, anObject3D.Translation.Z);
+   }
 
    public void setBlendingState(bool state) {
       if (state) display.BlendState = blending;
@@ -318,7 +333,7 @@ public class Stage : Game {
       inspector.setInfo(3, "Arrow keys move the player in, out, left, or right.  'R' resets player to initial orientation.");
       inspector.setInfo(4, "Stage toggles:  'B' bounding spheres, 'C' || 'X' cameras, 'F' fog, 'T' updates, 'Y' yon");
       // initialize empty info strings
-      for (int i = 5; i < 20; i++) inspector.setInfo(i, "  ");
+      for (int i = 6; i < 20; i++) inspector.setInfo(i, "  ");
       // set blending for bounding sphere drawing
       blending = new BlendState();
       blending.ColorSourceBlend = Blend.SourceAlpha;
@@ -358,21 +373,54 @@ public class Stage : Game {
 		Components.Add(wall);
 		// create a pack for "flocking" algorithms
 		// create a Pack of 6 dogs centered at (450, 500) that is leaderless
-		Pack pack = new Pack(this, "dog", "dogV6", 6, 450, 430, null);
+        Pack pack = new Pack(this, "dog", "Zcrocodile", 6, 450, 430, null);
 		Components.Add(pack);
       // ----------- OPTIONAL CONTENT HERE -----------------------
       // Load content for your project here
       // create a temple
-      Model3D m3d = new Model3D(this, "temple", "templeV3");
-      m3d.IsCollidable = true;  // must be set before addObject(...) and Model3D doesn't set it
-      m3d.addObject(new Vector3(340 * spacing, terrain.surfaceHeight(340, 340), 340 * spacing),
-         new Vector3(0, 1, 0), 0.79f); // , new Vector3(1, 4, 1));
-      Components.Add(m3d);
+        Model3D m3d = new Model3D(this, "temple", "templeV3");
+        m3d.IsCollidable = true;  // must be set before addObject(...) and Model3D doesn't set it
+        m3d.addObject(new Vector3(275 * spacing, terrain.surfaceHeight(275, 225), 225 * spacing),
+           new Vector3(0, 1, 0), 0.79f); // , new Vector3(1, 4, 1));
+        Components.Add(m3d);
+
 		// create 20 clouds
-		Cloud cloud = new Cloud(this, "cloud", "cloudV3", 20);
+        Cloud cloud = new Cloud(this, "cloud", "Zspaceship465", 20);
 		Components.Add(cloud);
+
+
+        // ----------- Project 1 Content -----------------------
+       treasures = new Treasure(this, "treasure1", "Zshiptreasure0", "Zshiptreasure1");
+        treasures.IsCollidable = false;  // must be set before addObject(...) and Model3D doesn't set it
+        treasures.addObject(new Vector3(447 * spacing, terrain.surfaceHeight(447, 453), 453 * spacing), new Vector3(0, 1, 0), 1.0f);
+        treasures.addObject(new Vector3(425 * spacing, terrain.surfaceHeight(425, 425), 425 * spacing), new Vector3(0, 1, 0), 2.0f);
+        treasures.addObject(new Vector3(425 * spacing, terrain.surfaceHeight(425, 475), 475 * spacing), new Vector3(0, 1, 0), 3.0f);
+        treasures.addObject(new Vector3(475 * spacing, terrain.surfaceHeight(475, 425), 425 * spacing), new Vector3(0, 1, 0), 4.0f);
+        treasures.addObject(new Vector3(475 * spacing, terrain.surfaceHeight(475, 475), 475 * spacing), new Vector3(0, 1, 0), 5.0f);
+        Components.Add(treasures);
+
+        Model3D LeftShips = new Model3D(this, "Lships", "Zbattleship1");
+        LeftShips.IsCollidable = true;  // must be set before addObject(...) and Model3D doesn't set it
+        LeftShips.addObject(new Vector3(150 * spacing, terrain.surfaceHeight(150, 420), 420 * spacing), new Vector3(0, 1, 0), 1.5707963f);
+        LeftShips.addObject(new Vector3(150 * spacing, terrain.surfaceHeight(150, 450), 450 * spacing), new Vector3(0, 1, 0), 1.5707963f);
+        LeftShips.addObject(new Vector3(150 * spacing, terrain.surfaceHeight(150, 480), 480 * spacing), new Vector3(0, 1, 0), 1.5707963f);
+        LeftShips.addObject(new Vector3(175 * spacing, terrain.surfaceHeight(175, 435), 435 * spacing), new Vector3(0, 1, 0), 1.5707963f);
+        LeftShips.addObject(new Vector3(175 * spacing, terrain.surfaceHeight(175, 465), 465 * spacing), new Vector3(0, 1, 0), 1.5707963f);
+        Components.Add(LeftShips);
+
+        Model3D RightShips = new Model3D(this, "Rships", "Zbattleship2");
+        RightShips.IsCollidable = true;  // must be set before addObject(...) and Model3D doesn't set it
+        RightShips.addObject(new Vector3(250 * spacing, terrain.surfaceHeight(250, 420), 420 * spacing), new Vector3(0, 1, 0), -1.5707963f);
+        RightShips.addObject(new Vector3(250 * spacing, terrain.surfaceHeight(250, 450), 450 * spacing), new Vector3(0, 1, 0), -1.5707963f);
+        RightShips.addObject(new Vector3(250 * spacing, terrain.surfaceHeight(250, 480), 480 * spacing), new Vector3(0, 1, 0), -1.5707963f);
+        RightShips.addObject(new Vector3(225 * spacing, terrain.surfaceHeight(225, 435), 435 * spacing), new Vector3(0, 1, 0), -1.5707963f);
+        RightShips.addObject(new Vector3(225 * spacing, terrain.surfaceHeight(225, 465), 465 * spacing), new Vector3(0, 1, 0), -1.5707963f);
+        Components.Add(RightShips);
+       // --------------------------------------------------------
       }
-  
+   
+   
+
    /// <summary>
    /// UnloadContent will be called once per game and is the place to unload
    /// all content.
@@ -409,7 +457,11 @@ public class Stage : Game {
             string.Format("npAgent:  Location ({0,5:f0},{1,3:f0},{2,5:f0})  Looking at ({3,5:f2},{4,5:f2},{5,5:f2})",
             npAgent.AgentObject.Translation.X, npAgent.AgentObject.Translation.Y, npAgent.AgentObject.Translation.Z,
             npAgent.AgentObject.Forward.X, npAgent.AgentObject.Forward.Y, npAgent.AgentObject.Forward.Z));
-			// inspector lines 13 and 14 can be used to describe player and npAgent's status
+
+         // ----------- Project 1 Content -----------------------
+         inspector.setInfo(13, String.Format("Project 1: 'L' lerp, 'N' treasure seek mode, Player:{0:D}, NPC:{1:D}", PCscore, NPCscore));
+		
+          // inspector lines 13 and 14 can be used to describe player and npAgent's status
          inspector.setMatrices("player", "npAgent", player.AgentObject.Orientation, npAgent.AgentObject.Orientation);
          }
       // Process user keyboard events that relate to the render state of the the stage
@@ -440,10 +492,65 @@ public class Stage : Game {
          FixedStepRendering = ! FixedStepRendering;
       else if (keyboardState.IsKeyDown(Keys.Y) && !oldKeyboardState.IsKeyDown(Keys.Y))
          YonFlag = ! YonFlag;  // toggle Yon clipping value.
+
+ // ----------- Project 1 Content -----------------------
+      else if (keyboardState.IsKeyDown(Keys.L) && !oldKeyboardState.IsKeyDown(Keys.L))
+          lerpFlag = !lerpFlag;  // toggle Lerp.
+      else if (keyboardState.IsKeyDown(Keys.N) && !oldKeyboardState.IsKeyDown(Keys.N))
+          TreasureMode();  // toggle Lerp.
+
       oldKeyboardState = keyboardState;    // Update saved state.
       base.Update(gameTime);  // update all GameComponents and DrawableGameComponents
       currentCamera.updateViewMatrix();
+
+      for (int i = 0; i < treasures.total;i++ )
+      {
+          if (treasures.active[i])
+          {
+              if (distance(treasures.Instance[i].Translation, player.AgentObject.Translation) < 300.0f)
+              {
+                  treasures.capture(i);
+                  PCscore++;
+              }
+              else if(distance(treasures.Instance[i].Translation, npAgent.AgentObject.Translation) < 300.0f)
+              {
+                  treasures.capture(i);
+                  NPCscore++;
+              }
+          }
       }
+
+          
+   }
+
+    private float distance(Vector3 m1, Vector3 m2)
+    {
+        return (float)Math.Sqrt(((m1.X - m2.X) * (m1.X - m2.X)) + ((m1.Z - m2.Z) * (m1.Z - m2.Z)));
+    }
+
+    private void TreasureMode()
+    {
+        int tempi = -1;
+        int tempd = Int32.MaxValue;
+        
+        for (int i = 0; i < treasures.total; i++)
+        {
+            if (treasures.active[i])
+            {
+                if (distance(treasures.Instance[i].Translation, npAgent.AgentObject.Translation) < tempd)
+                {
+                    tempi = i;
+                    tempd = (int)distance(treasures.Instance[i].Translation, npAgent.AgentObject.Translation);
+                }
+            }
+        }
+
+        if(tempi != -1)
+        {
+            npAgent.TreasureSeek(treasures.Instance[tempi].Translation);
+        }
+        
+    }
 
    /// <summary>
    /// Draws information in the display viewport.

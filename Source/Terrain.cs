@@ -48,6 +48,9 @@ public class Terrain : IndexVertexBuffers {
    private int[,] terrainHeight; 
    private BasicEffect effect;
    private GraphicsDevice display;
+   private int x, z, Ax, Az, Bx, Bz, Cx, Cz, Dx, Dz;
+   private double AA, DD, Yx, Yz, Y;
+   private Vector3 vA, vB, vC, vD;
 
    public Terrain(Stage theStage, string label, string terrainDataFile) 
       : base (theStage, label) 
@@ -170,6 +173,48 @@ public class Terrain : IndexVertexBuffers {
    public float surfaceHeight(int x, int z) {
       if (x < 0 || x > 511 || z < 0 || z > 511) return 0.0f;  // index valid ?
       return (float) terrainHeight[x,z]; }
+
+   public float surfaceHeightLerp(float X, float Z)
+   {
+       x = (int)(X / spacing);
+       z = (int)(Z / spacing);
+       
+       Ax = x * spacing;
+       Az = z * spacing;
+       Bx = (x + 1) * spacing;
+       Bz = z * spacing;
+       Cx = x * spacing;
+       Cz = (z + 1) * spacing;
+       Dx = (x + 1) * spacing;
+       Dz = (z + 1) * spacing;
+
+       vA = new Vector3(Ax, terrainHeight[Ax / spacing, Az / spacing], Az);
+       vB = new Vector3(Bx, terrainHeight[Bx / spacing, Bz / spacing], Bz);
+       vC = new Vector3(Cx, terrainHeight[Cx / spacing, Cz / spacing], Cz);
+       vD = new Vector3(Dx, terrainHeight[Dx / spacing, Dz / spacing], Dz);
+
+       if (x < 0 || x > 511 || z < 0 || z > 511) return 0.0f;  // index valid ?
+
+       AA = Math.Sqrt(((X - Ax) * (X - Ax)) + ((Z - Az) * (Z - Az)));
+       DD = Math.Sqrt(((X - Dx) * (X - Dx)) + ((Z - Dz) * (Z - Dz)));
+
+      if ( AA < DD )
+      {
+           Yx = Vector3.Lerp(vA, vB, (X - Ax) / spacing).Y - terrainHeight[Ax / spacing, Az / spacing];
+           Yz = Vector3.Lerp(vA, vC, (Z - Az) / spacing).Y - terrainHeight[Ax / spacing, Az / spacing];
+           Y = terrainHeight[Ax / spacing, Az / spacing] + Yx + Yz;
+       }
+       else
+       {
+           Yx = Vector3.Lerp(vC, vD, (X - Cx) / spacing).Y - terrainHeight[Dx / spacing, Dz / spacing];
+           Yz = Vector3.Lerp(vB, vD, (Z - Bz) / spacing).Y - terrainHeight[Dx / spacing, Dz / spacing];
+           Y = terrainHeight[Dx / spacing, Dz / spacing] + Yx + Yz;
+       }
+
+       
+
+       return (float)Y; 
+   }
 
    public override void  Draw(GameTime gameTime) {
       effect.VertexColorEnabled = true;

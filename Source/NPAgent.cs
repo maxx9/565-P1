@@ -44,7 +44,11 @@ namespace AGMGSKv6 {
 /// 12/31/2014 last changed
 /// </summary>
 public class NPAgent : Agent {
-   private NavNode nextGoal;
+
+    private bool seekMode;
+    private NavNode TreasureGoal;
+
+    private NavNode nextGoal;
    private Path path;
    private int snapDistance = 20;  // this should be a function of step and stepSize
 	// If using makePath(int[,]) set WayPoint (x, z) vertex positions in the following array
@@ -81,7 +85,16 @@ public class NPAgent : Agent {
       agentObject.turnToFace(nextGoal.Translation);  // orient towards the first path goal
 		// set snapDistance to be a little larger than step * stepSize
 		snapDistance = (int) (1.5 * (agentObject.Step * agentObject.StepSize));
+
+        seekMode = false;
       }   
+
+    public void TreasureSeek(Vector3 target)
+   {
+       seekMode = true;
+       TreasureGoal = new NavNode(target);
+   }
+
 
    /// <summary>
    /// Simple path following.  If within "snap distance" of a the nextGoal (a NavNode) 
@@ -89,24 +102,38 @@ public class NPAgent : Agent {
    /// continue making steps towards the nextGoal.
    /// </summary>
    public override void Update(GameTime gameTime) {
-		agentObject.turnToFace(nextGoal.Translation);  // adjust to face nextGoal every move
-		// See if at or close to nextGoal, distance measured in 2D xz plane
-		float distance = Vector3.Distance(
-			new Vector3(nextGoal.Translation.X, 0, nextGoal.Translation.Z),
-			new Vector3(agentObject.Translation.X, 0, agentObject.Translation.Z));
-      stage.setInfo(15,  
-         string.Format("npAvatar:  location ({0:f0}, {1:f0}, {2:f0})  looking at ({3:f2}, {4:f2}, {5:f2})",
-            agentObject.Translation.X, agentObject.Translation.Y, agentObject.Translation.Z,
-            agentObject.Forward.X, agentObject.Forward.Y, agentObject.Forward.Z));
-      stage.setInfo(16,
-			string.Format("npAvatar:  nextGoal ({0:f0}, {1:f0}, {2:f0})  distance to next goal = {3,5:f2})", 
-				nextGoal.Translation.X, nextGoal.Translation.Y, nextGoal.Translation.Z, distance) );
-      if (distance  <= snapDistance)  {  
-         // snap to nextGoal and orient toward the new nextGoal 
-         nextGoal = path.NextNode;
-         // agentObject.turnToFace(nextGoal.Translation);
-         }
-      base.Update(gameTime);  // Agent's Update();
+       if (seekMode)
+           PathUpdate(gameTime, TreasureGoal);
+       else
+           PathUpdate(gameTime, nextGoal);
       }
+
+   private void PathUpdate(GameTime gameTime, NavNode goal)
+   {
+       agentObject.turnToFace(goal.Translation);  // adjust to face nextGoal every move
+       // See if at or close to nextGoal, distance measured in 2D xz plane
+       float distance = Vector3.Distance(
+           new Vector3(goal.Translation.X, 0, goal.Translation.Z),
+           new Vector3(agentObject.Translation.X, 0, agentObject.Translation.Z));
+       stage.setInfo(15,
+          string.Format("npAvatar:  location ({0:f0}, {1:f0}, {2:f0})  looking at ({3:f2}, {4:f2}, {5:f2})",
+             agentObject.Translation.X, agentObject.Translation.Y, agentObject.Translation.Z,
+             agentObject.Forward.X, agentObject.Forward.Y, agentObject.Forward.Z));
+       stage.setInfo(16,
+             string.Format("npAvatar:  nextGoal ({0:f0}, {1:f0}, {2:f0})  distance to next goal = {3,5:f2})",
+                 goal.Translation.X, goal.Translation.Y, goal.Translation.Z, distance));
+       if (distance <= snapDistance)
+       {
+           if(seekMode)
+           {
+               seekMode = false;
+           }
+           else
+           // snap to nextGoal and orient toward the new nextGoal 
+           nextGoal = path.NextNode;
+           // agentObject.turnToFace(nextGoal.Translation);
+       }
+       base.Update(gameTime);  // Agent's Update();
+   }
    } 
 }
