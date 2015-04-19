@@ -59,7 +59,7 @@ public Wall(Stage theStage, string label, string meshFile)  : base(theStage, lab
 	for (int i = 0; i < brick.GetLength(0); i++) {
 		int xPos = brick[i, 0]; 
 		int zPos = brick[i, 1];
-		addObject(new Vector3(xPos * spacing, terrain.surfaceHeight(xPos, zPos), zPos * spacing), Vector3.Up, 0.0f); }
+		addObject(new Vector3(xPos * spacing, terrain.surfaceHeight(xPos, zPos), zPos * spacing), Vector3.Up, 0.0f, true); }
 		}
 	}
 }

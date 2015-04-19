@@ -42,6 +42,8 @@ namespace AGMGSKv6 {
 /// </summary>
 public class Pack : MovableModel3D {   
    Object3D leader;
+   public int packPercent;
+   private double packChance;
 
 /// <summary>
 /// Construct a pack with an Object3D leader
@@ -53,12 +55,14 @@ public class Pack : MovableModel3D {
 /// <param name="aLeader"> alpha dog can be used for flock center and alignment </param>
    public Pack(Stage theStage, string label, string meshFile, int nDogs, int xPos, int zPos, Object3D theLeader)
       : base(theStage, label, meshFile) {
-      isCollidable = true;
+          packPercent = 0;
+          packChance = 0;
+       isCollidable = true;
 		random = new Random();
       leader = theLeader;
 		int spacing = stage.Spacing;
 		// initial vertex offset of dogs around (xPos, zPos)
-		int [,] position = { {0, 0}, {7, -4}, {-5, -2}, {-7, 4}, {5, 2} };
+        int[,] position = { { -5, -5 }, { -5, 0 }, { -5, 5 }, { 0, -5 }, { 0, 0 }, { 0, 5 }, { 5, -5 }, { 5, 0 }, { 5, 5 } };
 		for( int i = 0; i < position.GetLength(0); i++) {
 			int x = xPos + position[i, 0];
 			int z = zPos + position[i, 1];
@@ -76,14 +80,31 @@ public class Pack : MovableModel3D {
    /// </summary>      
    public override void Update(GameTime gameTime) {
       // if (leader == null) need to determine "virtual leader from members"
-      float angle = 0.3f;
+       float angle;
       foreach (Object3D obj in instance) {
-         obj.Yaw = 0.0f;
-         // change direction 4 time a second  0.07 = 4/60
-         if ( random.NextDouble() < 0.07) {
-            if (random.NextDouble() < 0.5) obj.Yaw -= angle; // turn left
-            else  obj.Yaw += angle; // turn right
-            }
+          obj.Yaw = 0;
+          if (random.NextDouble() < 0.07)
+          {
+              if (random.NextDouble() < packChance)
+              {
+                  angle = 0.1f;
+                  if (packPacking(obj))
+                      obj.Yaw += angle;
+                  else
+                      obj.Yaw -= angle;
+              }
+              else
+              {
+                  angle = 0.3f;
+                  if (random.NextDouble() < 0.5)
+                      obj.Yaw -= angle; // turn left
+                  else
+                      obj.Yaw += angle; // turn right
+              }
+          }
+          
+
+             
          obj.updateMovableObject();
          stage.setSurfaceHeight(obj);
          }
@@ -94,6 +115,104 @@ public class Pack : MovableModel3D {
    public Object3D Leader {
       get { return leader; }
       set { leader = value; }}
+
+   public void toggle()
+   {
+       if (packPercent == 0)
+           packPercent = 33;
+       else if (packPercent == 33)
+           packPercent = 66;
+       else if (packPercent == 66)
+           packPercent = 99;
+       else if (packPercent == 99)
+           packPercent = 0;
+       else
+           packPercent = 0;
+
+       packChance = packPercent / 100.0;
+   }
+
+    private bool packPacking( Object3D OO )
+   {
+
+       Vector3 packSeparationTemp = new Vector3(0,0,0);
+       foreach (Object3D obj in instance) {
+           if(OO.Translation != obj.Translation)
+               packSeparationTemp += (OO.Translation - obj.Translation) * (1 / Vector3.Distance(OO.Translation, obj.Translation));
+       }
+
+       Vector3 separationTemp = OO.Translation - stage.player.AgentObject.Translation;
+       Vector3 alignmentTemp = stage.player.AgentObject.Forward;
+       Vector3 cohesionTemp = stage.player.AgentObject.Translation - OO.Translation;
+
+       Vector3 packSeparation = Vector3.Normalize(new Vector3(packSeparationTemp.X, 0, packSeparationTemp.Z));
+       Vector3 separation = Vector3.Normalize(new Vector3(separationTemp.X, 0, separationTemp.Z));
+       Vector3 alignment = Vector3.Normalize(new Vector3(alignmentTemp.X, 0, alignmentTemp.Z));
+       Vector3 cohesion = Vector3.Normalize(new Vector3(cohesionTemp.X, 0, cohesionTemp.Z));
+
+       Vector3 packVector;
+        
+       float S, A, C;
+       float P = 0.5f;
+
+       float ansF;
+       bool ansB;
+
+       double dis = Vector3.Distance(OO.Translation, stage.player.AgentObject.Translation);
+
+        if(dis <= 400)
+        {
+            S = 1;
+            A = 0;
+            C = 0;
+        }
+        else if( dis < 1000)
+        {
+            S = 1 - ((float)dis - 400) / 600;
+            A = ((float)dis - 400) / 600;
+            C = 0;
+        }
+        else if( dis <= 2000)
+        {
+            S = 0;
+            A = 1;
+            C = 0;
+        }
+        else if (dis < 3000)
+        {
+            S = 0;
+            A = 1 - ((float)dis - 2000) / 1000;
+            C = ((float)dis - 2000) / 1000;
+        }
+        else
+        {
+            S = 0;
+            A = 0;
+            C = 1;
+        }
+
+        packVector = (S * separation) + (A * alignment) + (C * cohesion) + (P * packSeparation);
+
+        float f1 = Vector3.Dot(Vector3.Normalize(OO.Forward), Vector3.Normalize(packVector));
+        Vector3 v1 = Vector3.Cross(Vector3.Normalize(OO.Forward), Vector3.Normalize(packVector));
+
+        if (f1 > 1)
+            f1 = 1;
+        if (f1 < -1)
+            f1 = -1;
+
+        if(v1.Y > 0)
+            ansF = (float)Math.Acos(f1);
+        else
+            ansF = -(float)Math.Acos(f1);
+
+        if (ansF > 0)
+            ansB = true;
+        else
+            ansB = false;
+
+        return ansB;
+   }
 
    }
 }

@@ -1,3 +1,6 @@
+//Maksim Sadovkiy - maksim.sadovskiy.658@my.csun.edu
+//Comp 565 Project 1 - Terrain/AGMGSK
+
 /*
  * Program.cs is the starting point for AGMGSK applications.
  * 

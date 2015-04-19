@@ -1,4 +1,7 @@
-﻿/*  
+﻿//Maksim Sadovkiy - maksim.sadovskiy.658@my.csun.edu
+//Comp 565 Project 1 - Terrain/AGMGSK
+
+/*  
     Copyright (C) 2015 G. Michael Barnes
  
     The file Stage.cs is part of AGMGSKv6 a port and update of AGXNASKv5 from
@@ -25,7 +28,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using AGMGSKv6;
 #if MONOGAMES //  true, build for MonoGames
    using Microsoft.Xna.Framework.Storage; 
 #endif
@@ -95,8 +97,9 @@ public class Stage : Game {
    protected Camera currentCamera, topDownCamera;
    protected int cameraIndex = 0;
    // Required entities -- all AGXNASK programs have a Player and Terrain
-   protected Player player = null;
-   protected NPAgent npAgent = null;
+   public Player player = null;
+   public NPAgent npAgent = null;
+   protected Pack pack = null;
    protected Terrain terrain = null;
    protected List<Object3D> collidable = null;
    // Screen display information variables
@@ -105,11 +108,15 @@ public class Stage : Game {
 	// Stage variables
 	private TimeSpan time;  // if you need to know the time see Property Time
 
-    private Treasure treasures;
+    //-------------Project 1------------------
+    public Treasure treasures;
     protected bool lerpFlag = true;
     protected int PCscore = 0;
     protected int NPCscore = 0;
-    
+    //-------------Project 2------------------
+    public QuadTree QT;
+    public List<QuadNode> nodeMap;
+    //----------------------------------------
 
    public Stage() : base() {
       graphics = new GraphicsDeviceManager(this);
@@ -363,9 +370,9 @@ public class Stage : Game {
       player.IsCollidable = true; // test collisions for player
       Components.Add(player);
       npAgent = new NPAgent(this, "Evader",
-         new Vector3(490 * spacing, terrain.surfaceHeight(490, 450), 450 * spacing),
+         new Vector3(500 * spacing, terrain.surfaceHeight(500, 400), 400 * spacing),
          new Vector3(0, 1, 0), 0.0f, "magentaAvatarV6");  // facing +Z
-		npAgent.IsCollidable = false;  // npAgent does not test for collisions
+		npAgent.IsCollidable = true;  // npAgent does not test for collisions
       Components.Add(npAgent);
 		//  ------ The wall and pack are required for Comp 565 projects, but not AGMGSK   ---------
 		// create walls for navigation algorithms
@@ -373,19 +380,19 @@ public class Stage : Game {
 		Components.Add(wall);
 		// create a pack for "flocking" algorithms
 		// create a Pack of 6 dogs centered at (450, 500) that is leaderless
-        Pack pack = new Pack(this, "dog", "Zcrocodile", 6, 450, 430, null);
+        pack = new Pack(this, "crocodiles", "Zcrocodile", 9, 450, 430, player.AgentObject);
 		Components.Add(pack);
       // ----------- OPTIONAL CONTENT HERE -----------------------
       // Load content for your project here
       // create a temple
         Model3D m3d = new Model3D(this, "temple", "templeV3");
         m3d.IsCollidable = true;  // must be set before addObject(...) and Model3D doesn't set it
-        m3d.addObject(new Vector3(275 * spacing, terrain.surfaceHeight(275, 225), 225 * spacing),
-           new Vector3(0, 1, 0), 0.79f); // , new Vector3(1, 4, 1));
+        m3d.addObject(new Vector3(150 * spacing, terrain.surfaceHeight(150, 200), 200 * spacing),
+           new Vector3(0, 1, 0), 0.79f, true); // , new Vector3(1, 4, 1));
         Components.Add(m3d);
 
 		// create 20 clouds
-        Cloud cloud = new Cloud(this, "cloud", "Zspaceship465", 20);
+        Cloud cloud = new Cloud(this, "spaceships", "Zspaceship465", 20);
 		Components.Add(cloud);
 
 
@@ -401,26 +408,34 @@ public class Stage : Game {
 
         Model3D LeftShips = new Model3D(this, "Lships", "Zbattleship1");
         LeftShips.IsCollidable = true;  // must be set before addObject(...) and Model3D doesn't set it
-        LeftShips.addObject(new Vector3(150 * spacing, terrain.surfaceHeight(150, 420), 420 * spacing), new Vector3(0, 1, 0), 1.5707963f);
-        LeftShips.addObject(new Vector3(150 * spacing, terrain.surfaceHeight(150, 450), 450 * spacing), new Vector3(0, 1, 0), 1.5707963f);
-        LeftShips.addObject(new Vector3(150 * spacing, terrain.surfaceHeight(150, 480), 480 * spacing), new Vector3(0, 1, 0), 1.5707963f);
-        LeftShips.addObject(new Vector3(175 * spacing, terrain.surfaceHeight(175, 435), 435 * spacing), new Vector3(0, 1, 0), 1.5707963f);
-        LeftShips.addObject(new Vector3(175 * spacing, terrain.surfaceHeight(175, 465), 465 * spacing), new Vector3(0, 1, 0), 1.5707963f);
+        LeftShips.addObject(new Vector3(150 * spacing, terrain.surfaceHeight(150, 420), 420 * spacing), new Vector3(0, 1, 0), -1.5707963f, true);
+        LeftShips.addObject(new Vector3(150 * spacing, terrain.surfaceHeight(150, 450), 450 * spacing), new Vector3(0, 1, 0), -1.5707963f, true);
+        LeftShips.addObject(new Vector3(150 * spacing, terrain.surfaceHeight(150, 480), 480 * spacing), new Vector3(0, 1, 0), -1.5707963f, true);
+        LeftShips.addObject(new Vector3(175 * spacing, terrain.surfaceHeight(175, 435), 435 * spacing), new Vector3(0, 1, 0), -1.5707963f, true);
+        LeftShips.addObject(new Vector3(175 * spacing, terrain.surfaceHeight(175, 465), 465 * spacing), new Vector3(0, 1, 0), -1.5707963f, true);
         Components.Add(LeftShips);
 
         Model3D RightShips = new Model3D(this, "Rships", "Zbattleship2");
         RightShips.IsCollidable = true;  // must be set before addObject(...) and Model3D doesn't set it
-        RightShips.addObject(new Vector3(250 * spacing, terrain.surfaceHeight(250, 420), 420 * spacing), new Vector3(0, 1, 0), -1.5707963f);
-        RightShips.addObject(new Vector3(250 * spacing, terrain.surfaceHeight(250, 450), 450 * spacing), new Vector3(0, 1, 0), -1.5707963f);
-        RightShips.addObject(new Vector3(250 * spacing, terrain.surfaceHeight(250, 480), 480 * spacing), new Vector3(0, 1, 0), -1.5707963f);
-        RightShips.addObject(new Vector3(225 * spacing, terrain.surfaceHeight(225, 435), 435 * spacing), new Vector3(0, 1, 0), -1.5707963f);
-        RightShips.addObject(new Vector3(225 * spacing, terrain.surfaceHeight(225, 465), 465 * spacing), new Vector3(0, 1, 0), -1.5707963f);
+        RightShips.addObject(new Vector3(250 * spacing, terrain.surfaceHeight(250, 420), 420 * spacing), new Vector3(0, 1, 0), 1.5707963f, true);
+        RightShips.addObject(new Vector3(250 * spacing, terrain.surfaceHeight(250, 450), 450 * spacing), new Vector3(0, 1, 0), 1.5707963f, true);
+        RightShips.addObject(new Vector3(250 * spacing, terrain.surfaceHeight(250, 480), 480 * spacing), new Vector3(0, 1, 0), 1.5707963f, true);
+        RightShips.addObject(new Vector3(225 * spacing, terrain.surfaceHeight(225, 435), 435 * spacing), new Vector3(0, 1, 0), 1.5707963f, true);
+        RightShips.addObject(new Vector3(225 * spacing, terrain.surfaceHeight(225, 465), 465 * spacing), new Vector3(0, 1, 0), 1.5707963f, true);
         Components.Add(RightShips);
-       // --------------------------------------------------------
-      }
-   
-   
-
+       
+       
+       // ----------- Project 2 Content -----------------------
+        QT = new QuadTree(this, 0, 0, range-1, 0, range-1);
+        nodeMap = new List<QuadNode>();
+        QT.traverseTree(QT, nodeMap);
+        QT.setAdj(nodeMap);
+        //QT.testtest(nodeMap);
+       //------------------------------------------------------        
+        int N = QT.countN;
+        int L = QT.countL;
+        int k = nodeMap.Count;
+    }
    /// <summary>
    /// UnloadContent will be called once per game and is the place to unload
    /// all content.
@@ -458,46 +473,60 @@ public class Stage : Game {
             npAgent.AgentObject.Translation.X, npAgent.AgentObject.Translation.Y, npAgent.AgentObject.Translation.Z,
             npAgent.AgentObject.Forward.X, npAgent.AgentObject.Forward.Y, npAgent.AgentObject.Forward.Z));
 
+         // inspector lines 13 and 14 can be used to describe player and npAgent's status
+
          // ----------- Project 1 Content -----------------------
          inspector.setInfo(13, String.Format("Project 1: 'L' lerp, 'N' treasure seek mode, Player:{0:D}, NPC:{1:D}", PCscore, NPCscore));
+
+         // ----------- Project 2 Content -----------------------
+         inspector.setInfo(14, String.Format("Project 2: 'P' pack toggle, Current Pack Percent:{0:D}%", pack.packPercent));
 		
-          // inspector lines 13 and 14 can be used to describe player and npAgent's status
+          
          inspector.setMatrices("player", "npAgent", player.AgentObject.Orientation, npAgent.AgentObject.Orientation);
          }
       // Process user keyboard events that relate to the render state of the the stage
       KeyboardState keyboardState = Keyboard.GetState();
       if (keyboardState.IsKeyDown(Keys.Escape)) Exit();
-      else if (keyboardState.IsKeyDown(Keys.B) && !oldKeyboardState.IsKeyDown(Keys.B)) 
-         DrawBoundingSpheres = ! DrawBoundingSpheres;
-      else if (keyboardState.IsKeyDown(Keys.C) && !oldKeyboardState.IsKeyDown(Keys.C)) 
-         setCamera(1);
-		else if (keyboardState.IsKeyDown(Keys.X) && !oldKeyboardState.IsKeyDown(Keys.X))
-			setCamera(-1);
+      else if (keyboardState.IsKeyDown(Keys.B) && !oldKeyboardState.IsKeyDown(Keys.B))
+          DrawBoundingSpheres = !DrawBoundingSpheres;
+      else if (keyboardState.IsKeyDown(Keys.C) && !oldKeyboardState.IsKeyDown(Keys.C))
+          setCamera(1);
+      else if (keyboardState.IsKeyDown(Keys.X) && !oldKeyboardState.IsKeyDown(Keys.X))
+          setCamera(-1);
       else if (keyboardState.IsKeyDown(Keys.F) && !oldKeyboardState.IsKeyDown(Keys.F))
-         Fog = ! Fog;
+          Fog = !Fog;
       // key event handlers needed for Inspector
       // set help display on
-      else if (keyboardState.IsKeyDown(Keys.H) && !oldKeyboardState.IsKeyDown(Keys.H)) {
-         inspector.ShowHelp = ! inspector.ShowHelp; 
-         inspector.ShowMatrices = false; }
+      else if (keyboardState.IsKeyDown(Keys.H) && !oldKeyboardState.IsKeyDown(Keys.H))
+      {
+          inspector.ShowHelp = !inspector.ShowHelp;
+          inspector.ShowMatrices = false;
+      }
       // set info display on
-      else if (keyboardState.IsKeyDown(Keys.I) && !oldKeyboardState.IsKeyDown(Keys.I)) 
-         inspector.showInfo();
+      else if (keyboardState.IsKeyDown(Keys.I) && !oldKeyboardState.IsKeyDown(Keys.I))
+          inspector.showInfo();
       // set miscellaneous display on
-      else if (keyboardState.IsKeyDown(Keys.M) && !oldKeyboardState.IsKeyDown(Keys.M)) {
-         inspector.ShowMatrices = ! inspector.ShowMatrices;
-         inspector.ShowHelp = false; }
+      else if (keyboardState.IsKeyDown(Keys.M) && !oldKeyboardState.IsKeyDown(Keys.M))
+      {
+          inspector.ShowMatrices = !inspector.ShowMatrices;
+          inspector.ShowHelp = false;
+      }
       // toggle update speed between FixedStep and ! FixedStep
       else if (keyboardState.IsKeyDown(Keys.T) && !oldKeyboardState.IsKeyDown(Keys.T))
-         FixedStepRendering = ! FixedStepRendering;
+          FixedStepRendering = !FixedStepRendering;
       else if (keyboardState.IsKeyDown(Keys.Y) && !oldKeyboardState.IsKeyDown(Keys.Y))
-         YonFlag = ! YonFlag;  // toggle Yon clipping value.
+          YonFlag = !YonFlag;  // toggle Yon clipping value.
 
  // ----------- Project 1 Content -----------------------
       else if (keyboardState.IsKeyDown(Keys.L) && !oldKeyboardState.IsKeyDown(Keys.L))
           lerpFlag = !lerpFlag;  // toggle Lerp.
       else if (keyboardState.IsKeyDown(Keys.N) && !oldKeyboardState.IsKeyDown(Keys.N))
-          TreasureMode();  // toggle Lerp.
+          npAgent.TreasureMode();  // toggle Lerp.
+
+ // ----------- Project 2 Content -----------------------
+      else if (keyboardState.IsKeyDown(Keys.P) && !oldKeyboardState.IsKeyDown(Keys.P))
+          pack.toggle();
+ // -----------------------------------------------------
 
       oldKeyboardState = keyboardState;    // Update saved state.
       base.Update(gameTime);  // update all GameComponents and DrawableGameComponents
@@ -528,29 +557,7 @@ public class Stage : Game {
         return (float)Math.Sqrt(((m1.X - m2.X) * (m1.X - m2.X)) + ((m1.Z - m2.Z) * (m1.Z - m2.Z)));
     }
 
-    private void TreasureMode()
-    {
-        int tempi = -1;
-        int tempd = Int32.MaxValue;
-        
-        for (int i = 0; i < treasures.total; i++)
-        {
-            if (treasures.active[i])
-            {
-                if (distance(treasures.Instance[i].Translation, npAgent.AgentObject.Translation) < tempd)
-                {
-                    tempi = i;
-                    tempd = (int)distance(treasures.Instance[i].Translation, npAgent.AgentObject.Translation);
-                }
-            }
-        }
-
-        if(tempi != -1)
-        {
-            npAgent.TreasureSeek(treasures.Instance[tempi].Translation);
-        }
-        
-    }
+    
 
    /// <summary>
    /// Draws information in the display viewport.

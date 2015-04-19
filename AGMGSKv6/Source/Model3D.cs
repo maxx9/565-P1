@@ -1,3 +1,6 @@
+//Maksim Sadovkiy - maksim.sadovskiy.658@my.csun.edu
+//Comp 565 Project 1 - Terrain/AGMGSK
+
 /*  
     Copyright (C) 2015 G. Michael Barnes
  
@@ -155,7 +158,20 @@ public class Model3D : DrawableGameComponent {
       if (IsCollidable) stage.Collidable.Add(obj3d);
       return obj3d;
       }
-       
+
+    //Project 2
+   public Object3D addObject(Vector3 position, Vector3 orientAxis, float radians, bool UFG)
+   {
+
+       Object3D obj3d = new Object3D(stage, this, String.Format("{0}.{1}", name, instance.Count),
+          position, orientAxis, radians, Vector3.One);
+       obj3d.updateBoundingSphere();  // need to do only once for Model3D
+       obj3d.UseForGraph = UFG;
+       instance.Add(obj3d);
+       if (IsCollidable) stage.Collidable.Add(obj3d);
+       return obj3d;
+   }
+
    public override void  Draw(GameTime gameTime) {
        Matrix[] modelTransforms = new Matrix[model.Bones.Count];
       foreach (Object3D obj3d in instance) {

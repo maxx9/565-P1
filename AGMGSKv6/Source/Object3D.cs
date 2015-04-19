@@ -60,7 +60,9 @@ public class Object3D  {
    // object's BoundingSphere
    private Vector3 objectBoundingSphereCenter;    
    private float objectBoundingSphereRadius = 0.0f;
-   private Matrix objectBoundingSphereWorld;    
+   private Matrix objectBoundingSphereWorld;
+
+   public bool UseForGraph = false;
 
    // constructors
 

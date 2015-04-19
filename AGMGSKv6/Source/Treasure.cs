@@ -1,4 +1,7 @@
-﻿using System;
+﻿//Maksim Sadovkiy - maksim.sadovskiy.658@my.csun.edu
+//Comp 565 Project 1 - Terrain/AGMGSK
+
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -7,7 +10,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace AGMGSKv6
 {
-    class Treasure : Model3D
+    public class Treasure : Model3D
     {
 
         protected Model model0 = null;
@@ -15,6 +18,7 @@ namespace AGMGSKv6
 //        public bool active = true;
 
         public List<bool> active;
+        public List<Point> locations;
         public int total;
 
         public Treasure(Stage theStage, string label, string fileOfModel0, string fileOfModel1)
@@ -24,6 +28,7 @@ namespace AGMGSKv6
             model1 = stage.Content.Load<Model>(fileOfModel1);
 
             active = new List<bool>();
+            locations = new List<Point>();
             total = 0;
         }
 
@@ -32,6 +37,7 @@ namespace AGMGSKv6
             bool temp = true;
             active.Add(temp);
             total++;
+            locations.Add(new Point((int)position.X/150, (int)position.Z/150));
             return base.addObject(position, orientAxis, radians);
         }
 

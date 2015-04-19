@@ -103,7 +103,7 @@ public class Camera  {
             break;
          case CameraEnum.AboveCamera:
             viewMatrix = Matrix.CreateLookAt(
-               new Vector3(agent.Translation.X, agent.Translation.Y + 5 * offset,
+               new Vector3(agent.Translation.X, agent.Translation.Y + 25 * offset,
                agent.Translation.Z), 
                agent.Translation, new Vector3(0, 0, -1));
             break;
